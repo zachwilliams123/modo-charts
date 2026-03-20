@@ -7,16 +7,20 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-html,body { width:100%; height:100%; overflow:hidden; font-family:'DM Sans',sans-serif; background:#fff; color:#333; }
-.w { display:flex; flex-direction:column; width:100%; height:100%; padding:16px 20px 10px 20px; }
-h1 { font-size:17px; font-weight:400; line-height:1.25; margin-bottom:2px; }
+html,body { width:100%; min-height:100%; overflow-y:auto; font-family:'DM Sans',sans-serif; background:#fff; color:#333; }
+.w { display:flex; flex-direction:column; width:100%; min-height:100%; padding:10px 16px 8px 16px; }
+h1 { font-size:15px; font-weight:400; line-height:1.2; margin-bottom:2px; }
 h1 b { font-weight:700; }
-.sub { font-size:11px; color:#555; margin-bottom:5px; }
-.controls { display:flex; gap:7px; align-items:center; margin-bottom:6px; flex-wrap:wrap; }
-.ctrl-label { font-size:10.5px; color:#888; }
-.filter-btn { font-size:10px; font-family:'DM Sans',sans-serif; padding:3px 10px; border-radius:20px; border:1.5px solid #ddd; background:#fff; color:#666; cursor:pointer; transition:all 0.15s; }
+.sub { font-size:10px; color:#555; margin-bottom:3px; }
+.controls { display:flex; gap:5px; align-items:center; margin-bottom:4px; overflow-x:auto; flex-wrap:nowrap; scrollbar-width:none; }
+.controls::-webkit-scrollbar { display:none; }
+.ctrl-label { font-size:9px; color:#888; white-space:nowrap; }
+.filter-btn { font-size:9px; font-family:'DM Sans',sans-serif; padding:2px 8px; border-radius:20px; border:1px solid #ddd; background:#fff; color:#666; cursor:pointer; transition:all 0.15s; white-space:nowrap; }
 .filter-btn.active { font-weight:600; background:#f5f5f5; border-color:#999; }
-#ca { flex:1; min-height:0; }
+.legend-row { display:flex; flex-wrap:wrap; gap:5px 12px; padding:3px 0 4px 0; }
+.legend-item { display:flex; align-items:center; gap:3px; font-size:8px; color:#666; }
+.legend-swatch { width:10px; height:10px; border-radius:2px; flex-shrink:0; }
+#ca { width:100%; }
 .footer { display:flex; justify-content:space-between; align-items:flex-end; padding-top:4px; }
 .src { font-size:9px; color:#aaa; flex:1; line-height:1.45; }
 .wm  { font-size:17px; font-weight:700; color:#333; letter-spacing:.25em; text-transform:uppercase; padding-left:14px; }
@@ -24,8 +28,8 @@ h1 b { font-weight:700; }
 </head>
 <body>
 <div class="w">
-  <h1>GB CCGT + nuclear: commission to projected retirement — <b>CM exit ≠ decommissioned</b></h1>
-  <div class="sub">Nameplate MW (DUKES 5.11, 2024). Status verified against three sources: DUKES (physical existence), ELEXON BM PN data (operational), CMR (investment signal). Height ∝ MW.</div>
+  <h1>GB's gas and nuclear fleet is <b>retiring faster than it is being replaced</b></h1>
+  <div class="sub">Commission year to projected retirement · nameplate MW</div>
   <div class="controls">
     <span class="ctrl-label">Filter:</span>
     <button class="filter-btn active" data-z="all">All</button>
@@ -36,9 +40,10 @@ h1 b { font-weight:700; }
     <button class="filter-btn" data-z="East Midlands" style="color:#888">East Midlands</button>
     <button class="filter-btn" data-z="Scotland" style="color:#4E6D8C">Scotland</button>
   </div>
+  <div id="legend" class="legend-row"></div>
   <div id="ca"></div>
   <div class="footer">
-    <div class="src">Sources: DESNZ DUKES 5.11 (2024) — nameplate MW and physical closure confirmation; ELEXON BM PN API (Jan 2026) — operational status; GB Capacity Market Register — contract status; DESNZ/Baringa "Assessing the deployment potential of flexible capacity in GB" (Feb 2024) — retirement assumption (34yr upside for 1yr-rolling; 30yr where no T-4 secured). ★ = NESO LT2029 reactive power zone. Key finding: Peterhead, Great Yarmouth, South Humber Bank and Cottam DC exited the CM but remain physically operational in the BM — CM exit ≠ decommissioning. Killingholme classified retired (no BM data; DUKES lists remaining GT units only). Severn Power Calon mothball (2018) treated as same physical plant as active Severn Power Ltd (850 MW, recommissioned under new operator).</div>
+    <div class="src">Source: DESNZ DUKES 5.11 (2024); ELEXON BM PN (Jan 2026); GB CMR; DESNZ/Baringa (Feb 2024). ★ = NESO LT2029 zone.</div>
     <div class="wm">MODOENERGY</div>
   </div>
 </div>
@@ -147,7 +152,12 @@ function hoverText(p){
 
 function draw(){
   const ca=document.getElementById('ca');
-  const W=ca.clientWidth,H=ca.clientHeight;
+  const W=ca.clientWidth||700;
+  // Compute required height from plant count
+  const visibleAll=plants.filter(p=>fz==='all'||p.r===fz);
+  const totalH=visibleAll.reduce((s,p)=>s+bh(p.mw)+GAP,0)+(()=>{let groups=0,lg=null;visibleAll.forEach(p=>{const g=p.s==='retired'?'r':p.s==='bm_only'?'b':p.s==='confirmed'?'c':'a';if(lg&&g!==lg)groups++;lg=g;});return groups*9;})();
+  const H=Math.max(totalH+70, 300);
+  ca.style.height=H+'px';
   const LABEL=150,CW=W-LABEL-6;
   const xp=yr=>LABEL+(yr-X0)/(X1-X0)*CW;
   const AY=H-18;
@@ -204,20 +214,25 @@ function draw(){
     y+=h+GAP;
   });
 
-  // Legend
-  const ly=AY+4; let lx=LABEL;
-  [
-    {c:SC.retired,  o:.45, l:'Decommissioned'},
-    {c:SC.bm_only,  o:.85, l:'CM-exited, BM-active (not decommissioned)'},
-    {c:SC.confirmed,o:.82, l:'Nuclear — confirmed exit'},
-    {c:SC.at_risk,  o:.88, l:'1yr rolling — no investment signal'},
-    {c:SC.secured,  o:.85, l:'15yr contract'},
-  ].forEach(it=>{
-    el('rect',{x:lx,y:ly,width:10,height:10,fill:it.c,opacity:it.o,rx:'2'},svg);
-    tx(it.l,lx+14,ly+9.5,{fill:'#666','font-size':'8.5','font-family':'"DM Sans",sans-serif'},svg);
-    lx+=it.l.length*5+20;
-    if(lx>W-60){lx=LABEL;}
-  });
+  // Populate HTML legend (only once)
+  if(!document.getElementById('legend').hasChildNodes()){
+    [
+      {c:SC.retired,  o:.45, l:'Decommissioned'},
+      {c:SC.bm_only,  o:.85, l:'CM-exited, BM-active'},
+      {c:SC.confirmed,o:.82, l:'Nuclear — confirmed exit'},
+      {c:SC.at_risk,  o:.88, l:'1yr rolling'},
+      {c:SC.secured,  o:.85, l:'15yr contract'},
+    ].forEach(it=>{
+      const item=document.createElement('div');item.className='legend-item';
+      const sw=document.createElement('div');sw.className='legend-swatch';
+      // Convert hex+opacity to rgba so opacity only affects the swatch, not the label
+      const r=parseInt(it.c.slice(1,3),16),g=parseInt(it.c.slice(3,5),16),b=parseInt(it.c.slice(5,7),16);
+      sw.style.background='rgba('+r+','+g+','+b+','+it.o+')';
+      const lb=document.createElement('span');lb.textContent=it.l;
+      item.appendChild(sw);item.appendChild(lb);
+      document.getElementById('legend').appendChild(item);
+    });
+  }
 
   ca.innerHTML='';ca.appendChild(svg);
 }
