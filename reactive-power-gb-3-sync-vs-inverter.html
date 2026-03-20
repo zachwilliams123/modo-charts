@@ -47,30 +47,15 @@ h1 b { font-weight:700; }
 <script>
 const F = '"DM Sans", sans-serif';
 
-// Data: [GB_2026, GB_2030, GB_2035, DE_2026, DE_2030, DE_2035, ES_2026, ES_2030, ES_2035]
-// Synchronous TWh
-const syncData  = [162, 148, 130,  320, 290, 246,  150, 138, 105];
-// Inverter TWh
-const invData   = [133, 210, 340,  278, 395, 560,  126, 158, 218];
+// Updated data from Jan 2026 central scenario databooks
+const fullSync = [161,145,144, null,null,null, 318,317,297, null,null,null, 149,144,115];
+const fullInv  = [130,193,294, null,null,null, 278,385,543, null,null,null, 124,152,207];
 
-const labels = [
-  'GB<br>2026','GB<br>2030','GB<br>2035',
-  ' ','','',  // spacers
-  'DE<br>2026','DE<br>2030','DE<br>2035',
-  '  ','','',
-  'ES<br>2026','ES<br>2030','ES<br>2035',
-];
-
-// Build data arrays with nulls for spacers
-const fullSync = [162,148,130, null,null,null, 320,290,246, null,null,null, 150,138,105];
-const fullInv  = [133,210,340, null,null,null, 278,395,560, null,null,null, 126,158,218];
-
-// Compute % sync for annotation
 function syncPct(s, i) { return Math.round(s/(s+i)*100); }
 
 const annotations = [];
 const xPositions = [0,1,2, 6,7,8, 12,13,14];
-xPositions.forEach((xIdx, i) => {
+xPositions.forEach((xIdx) => {
   const s = fullSync[xIdx], iv = fullInv[xIdx];
   if (s == null) return;
   annotations.push({
@@ -83,7 +68,6 @@ xPositions.forEach((xIdx, i) => {
   });
 });
 
-// Panel labels
 ['Great Britain','Germany','Spain'].forEach((name, i) => {
   const xCenter = [1, 7, 13][i];
   annotations.push({
@@ -93,9 +77,6 @@ xPositions.forEach((xIdx, i) => {
     showarrow: false,
     font: { size: 12, color: '#555', family: F }, xanchor: 'center' });
 });
-
-// Sync % label annotation
-
 
 const data = [
   {
