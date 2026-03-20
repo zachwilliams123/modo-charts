@@ -21,24 +21,27 @@
       flex-direction: column;
       width: 100%;
       height: 100%;
-      padding: 24px 24px 16px 24px;
+      padding: 10px 16px 8px 16px;
     }
     .chart-header { margin-bottom: 2px; }
     .chart-header h1 {
       font-family: 'DM Sans', sans-serif;
-      font-size: 21px;
+      font-size: 17px;
       font-weight: 400;
       line-height: 1.3;
       color: #333333;
       margin: 0;
     }
     .chart-header h1 b { font-weight: 700; }
+    .hleg { display:flex; gap:16px; margin:4px 0 4px; }
+    .hli { display:flex; align-items:center; gap:5px; font-size:11px; color:#444; font-family:'DM Sans',sans-serif; }
+    .hls { width:11px; height:11px; border-radius:2px; flex-shrink:0; }
     .chart-subheader {
       font-family: 'DM Sans', sans-serif;
-      font-size: 14px;
+      font-size: 11px;
       font-weight: 400;
       color: #4a4a4a;
-      margin-top: 6px;
+      margin-top: 2px;
       line-height: 1.3;
     }
     #chart { flex: 1; min-height: 0; width: 100%; }
@@ -46,7 +49,7 @@
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
-      padding-top: 10px;
+      padding-top: 5px;
       gap: 16px;
     }
     .chart-footer-left {
@@ -57,14 +60,14 @@
     }
     .chart-source {
       font-family: 'DM Sans', sans-serif;
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 400;
       color: #AAAAAA;
       line-height: 1.4;
     }
     .chart-note {
       font-family: 'DM Sans', sans-serif;
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 400;
       color: #AAAAAA;
       line-height: 1.4;
@@ -84,14 +87,20 @@
 <body>
   <div class="chart-wrapper">
     <div class="chart-header">
-      <h1>Voltage-supporting reactive deficit grows <b>fourfold by 2037</b> as north-south power transits intensify</h1>
-      <div class="chart-subheader">Additional reactive power compensation required by TSO zone (MVAr), base scenario — absorbing and supporting</div>
+      <h1>Germany's reactive power deficit will <b>quadruple by 2037</b> as HVDC corridors complete</h1>
+      <div class="chart-subheader">Additional reactive compensation required by TSO zone (MVAr) · 2030 vs 2037</div>
+    </div>
+    <div class="hleg">
+      <div class="hli"><div class="hls" style="background:#81b1fe;"></div><span>2030</span></div>
+      <div class="hli"><div class="hls" style="background:#467ee4;"></div><span>2037 (absorbing)</span></div>
+      <div class="hli"><div class="hls" style="background:#f7c191;"></div><span>2030</span></div>
+      <div class="hli"><div class="hls" style="background:#e85f37;"></div><span>2037 (supporting)</span></div>
     </div>
     <div id="chart"></div>
     <div class="chart-footer">
       <div class="chart-footer-left">
-        <div class="chart-source">Source: NEP 2037/2045 Systemstabilitätsbericht (September 2023), 50Hertz / Amprion / TenneT / TransnetBW. Base scenario, Tables 11, 13, 15, 17, 19, 21.</div>
-        <div class="chart-note">Note: Voltage-absorbing stress (left panel) peaks during low-load hours when wind/PV leaves lines underloaded and capacitive. Voltage-supporting stress (right panel) peaks during high-transit hours when offshore wind pushes power south over overloaded AC lines. Supporting need grows 321% between 2030 and 2037 as HGÜ corridors complete and full north-south power flow becomes possible.</div>
+        <div class="chart-source">Source: NEP 2037/2045 Systemstabilitätsbericht (September 2023). 50Hertz / Amprion / TenneT / TransnetBW. Base scenario.</div>
+        
       </div>
       <div class="chart-wordmark">MODOENERGY</div>
     </div>
@@ -108,6 +117,7 @@
     const sup2037 = { '50Hertz': 15182, 'Amprion': 11571, 'TenneT': 15639, 'TransnetBW': 4470 };
 
     const tsos = ['50Hertz', 'Amprion', 'TenneT', 'TransnetBW'];
+    const tsoLabels = ['50Hertz', 'Amprion', 'TenneT', 'Transnet\nBW'];
 
     // Panel 1 (left): voltage-absorbing
     // Panel 2 (right): voltage-supporting
@@ -175,7 +185,7 @@
       font: { family: '"DM Sans", sans-serif', color: '#4a4a4a', size: 12 },
       paper_bgcolor: 'rgba(0,0,0,0)',
       plot_bgcolor: 'rgba(0,0,0,0)',
-      margin: { t: 10, r: 20, b: 40, l: 0, pad: 0 },
+      margin: { t: 20, r: 12, b: 50, l: 0, pad: 0 },
       title: null,
       barmode: 'group',
       bargap: 0.25,
@@ -186,15 +196,16 @@
         domain: [0, 0.46],
         showgrid: false,
         showline: false,
-        tickfont: { size: 12, color: '#4a4a4a', family: '"DM Sans", sans-serif' },
+        tickfont: { size: 11, color: '#4a4a4a', family: '"DM Sans", sans-serif' },
         tickcolor: 'rgba(0,0,0,0)',
-        automargin: true,
+        automargin: false,
+        tickangle: 0,
       },
       yaxis: {
         showgrid: true,
         gridcolor: '#E8E8E8',
         showline: false,
-        tickfont: { size: 11, color: '#4a4a4a', family: '"DM Sans", sans-serif' },
+        tickfont: { size: 12, color: '#4a4a4a', family: '"DM Sans", sans-serif' },
         tickcolor: 'rgba(0,0,0,0)',
         zeroline: false,
         automargin: true,
@@ -205,19 +216,20 @@
 
       // Right panel axis
       xaxis2: {
-        domain: [0.54, 1],
+        domain: [0.52, 1],
         showgrid: false,
         showline: false,
-        tickfont: { size: 12, color: '#4a4a4a', family: '"DM Sans", sans-serif' },
+        tickfont: { size: 11, color: '#4a4a4a', family: '"DM Sans", sans-serif' },
         tickcolor: 'rgba(0,0,0,0)',
-        automargin: true,
+        automargin: false,
+        tickangle: 0,
       },
       yaxis2: {
         anchor: 'x2',
         showgrid: true,
         gridcolor: '#E8E8E8',
         showline: false,
-        tickfont: { size: 11, color: '#4a4a4a', family: '"DM Sans", sans-serif' },
+        tickfont: { size: 12, color: '#4a4a4a', family: '"DM Sans", sans-serif' },
         tickcolor: 'rgba(0,0,0,0)',
         zeroline: false,
         automargin: true,
@@ -226,17 +238,7 @@
         title: { text: 'MVAr', font: { size: 11, color: '#4a4a4a' }, standoff: 8 },
       },
 
-      legend: {
-        orientation: 'h',
-        yanchor: 'bottom',
-        y: 1.02,
-        xanchor: 'left',
-        x: 0,
-        font: { size: 13, color: '#4a4a4a', family: '"DM Sans", sans-serif' },
-        bgcolor: 'rgba(255,255,255,0)',
-        borderwidth: 0,
-        traceorder: 'normal',
-      },
+      showlegend: false,
 
       hovermode: 'closest',
       hoverlabel: {
@@ -250,48 +252,21 @@
         {
           text: 'Voltage-absorbing',
           xref: 'paper', yref: 'paper',
-          x: 0.23, y: 1.06,
+          x: 0.23, y: 0.99,
           showarrow: false,
-          font: { size: 14, color: '#333333', family: '"DM Sans", sans-serif' },
+          font: { size: 12, color: '#555555', family: '"DM Sans", sans-serif' },
           xanchor: 'center',
         },
         {
           text: 'Voltage-supporting',
           xref: 'paper', yref: 'paper',
-          x: 0.77, y: 1.06,
+          x: 0.77, y: 0.99,
           showarrow: false,
-          font: { size: 14, color: '#333333', family: '"DM Sans", sans-serif' },
+          font: { size: 12, color: '#555555', family: '"DM Sans", sans-serif' },
           xanchor: 'center',
         },
-        // Sub-label: absorbing driver
-        {
-          text: 'Low-load hours: wind/PV leave<br>lines underloaded and capacitive',
-          xref: 'paper', yref: 'paper',
-          x: 0.23, y: -0.08,
-          showarrow: false,
-          font: { size: 10, color: '#888888', family: '"DM Sans", sans-serif' },
-          xanchor: 'center',
-        },
-        // Sub-label: supporting driver
-        {
-          text: 'High-transit hours: offshore wind<br>overloads north–south AC lines',
-          xref: 'paper', yref: 'paper',
-          x: 0.77, y: -0.08,
-          showarrow: false,
-          font: { size: 10, color: '#888888', family: '"DM Sans", sans-serif' },
-          xanchor: 'center',
-        },
-        // "×4" callout on right panel for TenneT
-        {
-          x: 'TenneT',
-          y: 16000,
-          xref: 'x2', yref: 'y2',
-          text: '×5.6 vs 2030',
-          showarrow: false,
-          font: { size: 10, color: ORANGE_DARK, family: '"DM Sans", sans-serif' },
-          xanchor: 'center',
-          xshift: 12,
-        },
+
+
       ],
     };
 

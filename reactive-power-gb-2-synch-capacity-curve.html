@@ -9,10 +9,13 @@
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 html,body { width:100%; height:100%; overflow:hidden; font-family:'DM Sans',sans-serif; background:#fff; }
-.w { display:flex; flex-direction:column; width:100%; height:100%; padding:18px 22px 10px 22px; }
-h1 { font-size:17px; font-weight:400; line-height:1.25; margin-bottom:3px; }
+.w { display:flex; flex-direction:column; width:100%; height:100%; padding:10px 16px 8px 16px; }
+h1 { font-size:17px; font-weight:400; line-height:1.25; margin-bottom:2px; }
 h1 b { font-weight:700; }
-.sub { font-size:11px; color:#555; margin-bottom:6px; }
+.sub { font-size:10px; color:#555; margin-bottom:4px; }
+.legend { display:flex; flex-wrap:wrap; gap:4px 16px; margin-bottom:6px; }
+.li { display:flex; align-items:center; gap:5px; font-size:10px; color:#444; font-family:'DM Sans',sans-serif; }
+.ls { width:11px; height:11px; border-radius:2px; flex-shrink:0; }
 #chart { flex:1; min-height:0; }
 .footer { display:flex; justify-content:space-between; align-items:flex-end; padding-top:5px; }
 .src { font-size:9px; color:#aaa; flex:1; line-height:1.45; }
@@ -21,11 +24,12 @@ h1 b { font-weight:700; }
 </head>
 <body>
 <div class="w">
-  <h1>GB synchronous generation: <b>38 GW in 2016, under 20 GW by 2030</b> — Scotland's fleet already gone</h1>
-  <div class="sub">CCGT + nuclear nameplate MW (DUKES 5.11, 2024) by region. DESNZ 34yr upside for 1yr-rolling plants. CM exit ≠ decommissioned — Peterhead, Great Yarmouth, South Humber Bank and Cottam DC remain BM-active.</div>
+  <h1>GB could lose <b>over half its synchronous capacity by 2035</b>, while BESS scales to 30 GW</h1>
+  <div class="sub">CCGT + nuclear nameplate capacity (GW) by region · 2016–2052</div>
+  <div id="hlegend" class="legend"></div>
   <div id="chart"></div>
   <div class="footer">
-    <div class="src">Sources: DESNZ DUKES 5.11 (2024) — nameplate MW; ELEXON BM PN API (Jan 2026) — operational status; GB Capacity Market Register; DESNZ/Baringa "Assessing the deployment potential of flexible capacity in GB" (Feb 2024). At 2026: ~28.5 GW CCGT (Baringa: ~27 GW — our figure slightly higher as we include BM-active plants Baringa may have assumed retired). 34yr upside at 2035: ~18 GW CCGT (Baringa upside: ~17 GW). ★ = NESO LT2029 reactive power zone.</div>
+    <div class="src">Source: DESNZ DUKES 5.11 (2024); ELEXON BM PN (Jan 2026); GB CMR; DESNZ/Baringa (Feb 2024). ★ = NESO LT2029 zone.</div>
     <div class="wm">MODOENERGY</div>
   </div>
 </div>
@@ -99,14 +103,14 @@ const plantData=[
 ];
 
 const REGIONS=[
-  {name:'Scotland',                col:'#4E6D8C'},
-  {name:'North East',              col:'#7A9BBD'},
-  {name:'North West ★  350 MVAr',  col:'#1A8F5A', r:'North West'},
-  {name:'Yorkshire',               col:'#7B55A0'},
-  {name:'East Midlands',           col:'#999999'},
-  {name:'London',                  col:'#C8860A'},
-  {name:'South Central ★  620 MVAr',col:'#C83218',r:'South Central'},
-  {name:'South Wales & West ★  480 MVAr',col:'#2C6FB5',r:'South Wales & West'},
+  {name:'Scotland',                col:'#4db8a4'},
+  {name:'North East',              col:'#81b1fe'},
+  {name:'North West ★',  col:'#27ac60', r:'North West'},
+  {name:'Yorkshire',               col:'#a074fb'},
+  {name:'East Midlands',           col:'#b4b2a9'},
+  {name:'London',                  col:'#e59c58'},
+  {name:'South Central ★',col:'#e85f37',r:'South Central'},
+  {name:'South Wales & West ★',col:'#467ee4',r:'South Wales & West'},
 ];
 
 const traces=[...REGIONS].reverse().map(reg=>{
@@ -120,45 +124,52 @@ const traces=[...REGIONS].reverse().map(reg=>{
     type:'scatter',mode:'none',fill:'tonexty',
     fillcolor:reg.col+'C8',line:{color:reg.col,width:0},
     stackgroup:'one',
-    hovertemplate:`<b>${reg.name}</b><br>%{x}: %{y:.1f} GW<extra></extra>`,
+    legendrank:1,
+    marker:{symbol:'square',size:10,color:reg.col},
+    hovertemplate:`<b>${reg.name}</b><br>%{x}: %{customdata} GW<extra></extra>`,
   };
 });
 
-// Baringa reference (CCGT only)
-traces.push({
-  name:'DESNZ/Baringa baseline — CCGT only (Feb 2024)',
-  x:[2026,2030,2035],y:[27,19,12],
-  type:'scatter',mode:'lines+markers',
-  line:{color:'#333',width:1.5,dash:'dot'},marker:{size:6,color:'#333'},
-  hovertemplate:'<b>DESNZ CCGT baseline</b><br>%{x}: %{y:.0f} GW<extra></extra>',
-});
+
 
 Plotly.newPlot('chart',traces,{
   font:{family:F,size:11.5,color:'#4a4a4a'},
   paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',
-  margin:{t:10,r:20,b:48,l:55,pad:0},
+  margin:{t:4,r:12,b:36,l:42,pad:0},
   xaxis:{showgrid:false,tickfont:{size:11},tickcolor:'rgba(0,0,0,0)',range:[2016,2052],dtick:4},
   yaxis:{title:{text:'GW',font:{size:11}},showgrid:true,gridcolor:'#EEEEEE',zeroline:false,tickfont:{size:11},range:[0,42]},
-  legend:{orientation:'h',yanchor:'bottom',y:1.01,xanchor:'left',x:0,font:{size:10},traceorder:'reversed',itemsizing:'constant'},
-  hovermode:'x unified',
+  showlegend:false,
+  hovermode:'closest',
   hoverlabel:{bgcolor:'#222',font:{family:F,size:11.5,color:'#fff'},bordercolor:'#222'},
   shapes:[
     {type:'line',xref:'x',yref:'paper',x0:2026,x1:2026,y0:0,y1:1,line:{color:'#333',width:2}},
   ],
   annotations:[
-    {x:2026,y:41,xref:'x',yref:'y',text:'Now',showarrow:false,
-     font:{size:10,color:'#555',family:F},xanchor:'center',bgcolor:'rgba(255,255,255,0.9)',borderpad:2},
-    {x:2020.5,y:38.5,xref:'x',yref:'y',
-     text:'Scotland: 3.3 GW exited<br>2022–2024 (confirmed)',
-     showarrow:true,arrowhead:2,arrowsize:0.8,arrowcolor:'#4E6D8C',ax:50,ay:-22,
-     font:{size:10,color:'#4E6D8C',family:F},bgcolor:'rgba(255,255,255,0.93)',borderpad:4,bordercolor:'#ddd',borderwidth:1},
-    {x:2027,y:6,xref:'x',yref:'y',
-     text:'Peterhead, S.Humber Bank, Great<br>Yarmouth + Cottam DC: CM-exited<br>but still BM-active in Jan 2026',
-     showarrow:true,arrowhead:2,arrowsize:0.8,arrowcolor:'#E8872A',ax:-55,ay:30,
-     font:{size:9.5,color:'#C86820',family:F},bgcolor:'rgba(255,255,255,0.93)',borderpad:4,bordercolor:'#f5d5b0',borderwidth:1},
+    {x:2026,y:41,xref:'x',yref:'y',text:'2026',showarrow:false,
+     font:{size:9,color:'#888',family:F},xanchor:'center'},
+
+
   ],
 },{responsive:true,displayModeBar:false});
 window.addEventListener('resize',()=>Plotly.Plots.resize('chart'));
+
+// Build HTML legend
+const legendEl = document.getElementById('hlegend');
+[...REGIONS].reverse().forEach(reg=>{
+  const item = document.createElement('div');
+  item.className = 'li';
+  const swatch = document.createElement('div');
+  swatch.className = 'ls';
+  const r=parseInt(reg.col.slice(1,3),16),g=parseInt(reg.col.slice(3,5),16),b=parseInt(reg.col.slice(5,7),16);
+  swatch.style.background = 'rgba('+r+','+g+','+b+',0.85)';
+  const label = document.createElement('span');
+  label.textContent = reg.name;
+  item.appendChild(swatch);
+  item.appendChild(label);
+  legendEl.appendChild(item);
+});
+
+
 </script>
 </body>
 </html>

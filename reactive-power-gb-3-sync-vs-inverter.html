@@ -9,30 +9,37 @@
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 html,body { width:100%; height:100%; overflow:hidden; font-family:'DM Sans',sans-serif; background:#fff; }
-.w { display:flex; flex-direction:column; width:100%; height:100%; padding:24px 24px 16px 24px; }
+.w { display:flex; flex-direction:column; width:100%; height:100%; padding:10px 16px 8px 16px; }
 .chart-header { margin-bottom:2px; }
-h1 { font-size:21px; font-weight:400; line-height:1.3; color:#333; margin:0; }
+h1 { font-size:17px; font-weight:400; line-height:1.3; color:#333; margin:0; }
 h1 b { font-weight:700; }
-.sub { font-size:14px; color:#4a4a4a; margin-top:6px; line-height:1.3; }
+.sub { font-size:11px; color:#4a4a4a; margin-top:2px; line-height:1.3; }
+.hleg { display:flex; gap:16px; margin:4px 0 2px; }
+.hli { display:flex; align-items:center; gap:5px; font-size:11px; color:#444; font-family:'DM Sans',sans-serif; }
+.hls { width:11px; height:11px; border-radius:2px; flex-shrink:0; }
 #chart { flex:1; min-height:0; width:100%; }
-.footer { display:flex; justify-content:space-between; align-items:flex-end; padding-top:10px; gap:16px; }
+.footer { display:flex; justify-content:space-between; align-items:flex-end; padding-top:5px; gap:16px; }
 .footer-left { display:flex; flex-direction:column; gap:2px; flex:1; }
-.src { font-size:11px; color:#aaa; line-height:1.4; }
-.note { font-size:11px; color:#aaa; line-height:1.4; }
+.src { font-size:10px; color:#aaa; line-height:1.4; }
+.note { font-size:10px; color:#aaa; line-height:1.4; }
 .wm { font-size:22px; font-weight:700; color:#333; letter-spacing:.25em; white-space:nowrap; flex-shrink:0; text-transform:uppercase; }
 </style>
 </head>
 <body>
 <div class="w">
   <div class="chart-header">
-    <h1>Synchronous generation is <b>falling across all three markets</b> — inverter-based capacity grows</h1>
-    <div class="sub">Annual generation output by source type (TWh), 2026 / 2030 / 2035 snapshots</div>
+    <h1>Synchronous generation is <b>falling in every market</b> as inverter-based capacity scales</h1>
+    <div class="sub">Generation output (TWh) · GB, Germany, Spain · 2026–2035</div>
+  </div>
+  <div class="hleg">
+    <div class="hli"><div class="hls" style="background:#467ee4;"></div><span>Synchronous</span></div>
+    <div class="hli"><div class="hls" style="background:#81b1fe;"></div><span>Inverter-based</span></div>
   </div>
   <div id="chart"></div>
   <div class="footer">
     <div class="footer-left">
       <div class="src">Source: Modo Energy modelling</div>
-      <div class="note">Note: Synchronous = CCGT, coal, lignite, nuclear, gas CHP, hydro. Inverter-based = onshore wind, offshore wind, solar PV, BESS.</div>
+      <div class="note">Synchronous = CCGT, coal, lignite, nuclear, hydro. Inverter-based = wind, solar PV, BESS.</div>
     </div>
     <div class="wm">MODOENERGY</div>
   </div>
@@ -71,7 +78,7 @@ xPositions.forEach((xIdx, i) => {
     xref: 'x', yref: 'y',
     text: `${syncPct(s,iv)}%`,
     showarrow: false,
-    font: { size: 10, color: '#467ee4', family: F },
+    font: { size: 9, color: '#888', family: F },
     xanchor: 'center',
   });
 });
@@ -80,24 +87,15 @@ xPositions.forEach((xIdx, i) => {
 ['Great Britain','Germany','Spain'].forEach((name, i) => {
   const xCenter = [1, 7, 13][i];
   annotations.push({
-    x: xCenter, y: 1.08,
+    x: xCenter, y: 0.98,
     xref: 'x', yref: 'paper',
     text: name,
     showarrow: false,
-    font: { size: 14, color: '#333', family: F },
-    xanchor: 'center',
-  });
+    font: { size: 12, color: '#555', family: F }, xanchor: 'center' });
 });
 
 // Sync % label annotation
-annotations.push({
-  x: -0.5, y: 1.0,
-  xref: 'paper', yref: 'paper',
-  text: '% = synchronous share',
-  showarrow: false,
-  font: { size: 10, color: '#467ee4', family: F },
-  xanchor: 'left',
-});
+
 
 const data = [
   {
@@ -122,7 +120,7 @@ const layout = {
   font: { family: F, color: '#4a4a4a', size: 12 },
   paper_bgcolor: 'rgba(0,0,0,0)',
   plot_bgcolor: 'rgba(0,0,0,0)',
-  margin: { t: 30, r: 20, b: 50, l: 0, pad: 0 },
+  margin: { t: 24, r: 10, b: 40, l: 36, pad: 0 },
   barmode: 'stack',
   bargap: 0.15,
   title: null,
@@ -130,24 +128,19 @@ const layout = {
     showgrid: false, showline: false,
     tickvals: [0,1,2, 6,7,8, 12,13,14],
     ticktext: ['2026','2030','2035', '2026','2030','2035', '2026','2030','2035'],
-    tickfont: { size: 11, color: '#4a4a4a', family: F },
+    tickfont: { size: 12, color: '#4a4a4a', family: F },
     tickcolor: 'rgba(0,0,0,0)',
     automargin: true,
     range: [-0.8, 14.8],
   },
   yaxis: {
-    showgrid: true, gridcolor: '#E8E8E8', showline: false,
-    tickfont: { size: 11, color: '#4a4a4a', family: F },
+    showgrid: false, showline: false,
+    tickfont: { size: 12, color: '#4a4a4a', family: F },
     tickcolor: 'rgba(0,0,0,0)',
     zeroline: false, automargin: true,
     title: { text: 'TWh', font: { size: 11, color: '#4a4a4a' }, standoff: 8 },
   },
-  legend: {
-    orientation: 'h', yanchor: 'bottom', y: 1.02, xanchor: 'left', x: 0,
-    font: { size: 12, color: '#4a4a4a', family: F },
-    bgcolor: 'rgba(255,255,255,0)', borderwidth: 0,
-    traceorder: 'reversed',
-  },
+  showlegend: false,
   hovermode: 'closest',
   hoverlabel: { bgcolor: '#333', font: { family: F, size: 12, color: '#fff' }, bordercolor: '#333' },
   annotations,
