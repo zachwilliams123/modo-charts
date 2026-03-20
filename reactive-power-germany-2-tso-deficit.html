@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Voltage-supporting reactive deficit grows fourfold by 2037 as north-south power transits intensify</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.35.0/plotly.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #FFFFFF;
+      color: #333333;
+    }
+    .chart-wrapper {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
+      padding: 24px 24px 16px 24px;
+    }
+    .chart-header { margin-bottom: 2px; }
+    .chart-header h1 {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 21px;
+      font-weight: 400;
+      line-height: 1.3;
+      color: #333333;
+      margin: 0;
+    }
+    .chart-header h1 b { font-weight: 700; }
+    .chart-subheader {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 400;
+      color: #4a4a4a;
+      margin-top: 6px;
+      line-height: 1.3;
+    }
+    #chart { flex: 1; min-height: 0; width: 100%; }
+    .chart-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      padding-top: 10px;
+      gap: 16px;
+    }
+    .chart-footer-left {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      flex: 1;
+    }
+    .chart-source {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 11px;
+      font-weight: 400;
+      color: #AAAAAA;
+      line-height: 1.4;
+    }
+    .chart-note {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 11px;
+      font-weight: 400;
+      color: #AAAAAA;
+      line-height: 1.4;
+    }
+    .chart-wordmark {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: #333333;
+      letter-spacing: 0.25em;
+      white-space: nowrap;
+      flex-shrink: 0;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+  <div class="chart-wrapper">
+    <div class="chart-header">
+      <h1>Voltage-supporting reactive deficit grows <b>fourfold by 2037</b> as north-south power transits intensify</h1>
+      <div class="chart-subheader">Additional reactive power compensation required by TSO zone (MVAr), base scenario — absorbing and supporting</div>
+    </div>
+    <div id="chart"></div>
+    <div class="chart-footer">
+      <div class="chart-footer-left">
+        <div class="chart-source">Source: NEP 2037/2045 Systemstabilitätsbericht (September 2023), 50Hertz / Amprion / TenneT / TransnetBW. Base scenario, Tables 11, 13, 15, 17, 19, 21.</div>
+        <div class="chart-note">Note: Voltage-absorbing stress (left panel) peaks during low-load hours when wind/PV leaves lines underloaded and capacitive. Voltage-supporting stress (right panel) peaks during high-transit hours when offshore wind pushes power south over overloaded AC lines. Supporting need grows 321% between 2030 and 2037 as HGÜ corridors complete and full north-south power flow becomes possible.</div>
+      </div>
+      <div class="chart-wordmark">MODOENERGY</div>
+    </div>
+  </div>
+
+  <script>
+    // 2030 base scenario — absorbing (spannungssenkend), Table 11
+    const abs2030 = { '50Hertz': 2978, 'Amprion': 1759, 'TenneT': 570, 'TransnetBW': 134 };
+    // 2037 base scenario — absorbing (spannungssenkend), Table 13
+    const abs2037 = { '50Hertz': 3420, 'Amprion': 3093, 'TenneT': 2726, 'TransnetBW': 1173 };
+    // 2030 base scenario — supporting (spannungshebend), Table 15
+    const sup2030 = { '50Hertz': 3742, 'Amprion': 4304, 'TenneT': 2803, 'TransnetBW': 273 };
+    // 2037 base scenario — supporting (spannungshebend), Table 17
+    const sup2037 = { '50Hertz': 15182, 'Amprion': 11571, 'TenneT': 15639, 'TransnetBW': 4470 };
+
+    const tsos = ['50Hertz', 'Amprion', 'TenneT', 'TransnetBW'];
+
+    // Panel 1 (left): voltage-absorbing
+    // Panel 2 (right): voltage-supporting
+    // Two traces per panel: 2030 (light), 2037 (dark)
+
+    const BLUE_LIGHT = '#81b1fe';
+    const BLUE_DARK  = '#467ee4';
+    const ORANGE_LIGHT = '#f7c191';
+    const ORANGE_DARK  = '#e85f37';
+
+    const data = [
+      // LEFT PANEL — absorbing
+      {
+        x: tsos,
+        y: tsos.map(t => abs2030[t]),
+        name: '2030',
+        type: 'bar',
+        xaxis: 'x',
+        yaxis: 'y',
+        marker: { color: BLUE_LIGHT },
+        legendgroup: '2030',
+        hovertemplate: '%{y:,} MVAr<extra>Absorbing 2030</extra>',
+        showlegend: true,
+      },
+      {
+        x: tsos,
+        y: tsos.map(t => abs2037[t]),
+        name: '2037',
+        type: 'bar',
+        xaxis: 'x',
+        yaxis: 'y',
+        marker: { color: BLUE_DARK },
+        legendgroup: '2037',
+        hovertemplate: '%{y:,} MVAr<extra>Absorbing 2037</extra>',
+        showlegend: true,
+      },
+      // RIGHT PANEL — supporting
+      {
+        x: tsos,
+        y: tsos.map(t => sup2030[t]),
+        name: '2030',
+        type: 'bar',
+        xaxis: 'x2',
+        yaxis: 'y2',
+        marker: { color: ORANGE_LIGHT },
+        legendgroup: '2030',
+        hovertemplate: '%{y:,} MVAr<extra>Supporting 2030</extra>',
+        showlegend: false,
+      },
+      {
+        x: tsos,
+        y: tsos.map(t => sup2037[t]),
+        name: '2037',
+        type: 'bar',
+        xaxis: 'x2',
+        yaxis: 'y2',
+        marker: { color: ORANGE_DARK },
+        legendgroup: '2037',
+        hovertemplate: '%{y:,} MVAr<extra>Supporting 2037</extra>',
+        showlegend: false,
+      },
+    ];
+
+    const layout = {
+      font: { family: '"DM Sans", sans-serif', color: '#4a4a4a', size: 12 },
+      paper_bgcolor: 'rgba(0,0,0,0)',
+      plot_bgcolor: 'rgba(0,0,0,0)',
+      margin: { t: 10, r: 20, b: 40, l: 0, pad: 0 },
+      title: null,
+      barmode: 'group',
+      bargap: 0.25,
+      bargroupgap: 0.08,
+
+      // Left panel axis
+      xaxis: {
+        domain: [0, 0.46],
+        showgrid: false,
+        showline: false,
+        tickfont: { size: 12, color: '#4a4a4a', family: '"DM Sans", sans-serif' },
+        tickcolor: 'rgba(0,0,0,0)',
+        automargin: true,
+      },
+      yaxis: {
+        showgrid: true,
+        gridcolor: '#E8E8E8',
+        showline: false,
+        tickfont: { size: 11, color: '#4a4a4a', family: '"DM Sans", sans-serif' },
+        tickcolor: 'rgba(0,0,0,0)',
+        zeroline: false,
+        automargin: true,
+        range: [0, 17000],
+        tickformat: ',',
+        title: { text: 'MVAr', font: { size: 11, color: '#4a4a4a' }, standoff: 8 },
+      },
+
+      // Right panel axis
+      xaxis2: {
+        domain: [0.54, 1],
+        showgrid: false,
+        showline: false,
+        tickfont: { size: 12, color: '#4a4a4a', family: '"DM Sans", sans-serif' },
+        tickcolor: 'rgba(0,0,0,0)',
+        automargin: true,
+      },
+      yaxis2: {
+        anchor: 'x2',
+        showgrid: true,
+        gridcolor: '#E8E8E8',
+        showline: false,
+        tickfont: { size: 11, color: '#4a4a4a', family: '"DM Sans", sans-serif' },
+        tickcolor: 'rgba(0,0,0,0)',
+        zeroline: false,
+        automargin: true,
+        range: [0, 17000],
+        tickformat: ',',
+        title: { text: 'MVAr', font: { size: 11, color: '#4a4a4a' }, standoff: 8 },
+      },
+
+      legend: {
+        orientation: 'h',
+        yanchor: 'bottom',
+        y: 1.02,
+        xanchor: 'left',
+        x: 0,
+        font: { size: 13, color: '#4a4a4a', family: '"DM Sans", sans-serif' },
+        bgcolor: 'rgba(255,255,255,0)',
+        borderwidth: 0,
+        traceorder: 'normal',
+      },
+
+      hovermode: 'closest',
+      hoverlabel: {
+        bgcolor: '#333333',
+        font: { family: '"DM Sans", sans-serif', size: 13, color: '#FFFFFF' },
+        bordercolor: '#333333',
+      },
+
+      annotations: [
+        // Panel titles
+        {
+          text: 'Voltage-absorbing',
+          xref: 'paper', yref: 'paper',
+          x: 0.23, y: 1.06,
+          showarrow: false,
+          font: { size: 14, color: '#333333', family: '"DM Sans", sans-serif' },
+          xanchor: 'center',
+        },
+        {
+          text: 'Voltage-supporting',
+          xref: 'paper', yref: 'paper',
+          x: 0.77, y: 1.06,
+          showarrow: false,
+          font: { size: 14, color: '#333333', family: '"DM Sans", sans-serif' },
+          xanchor: 'center',
+        },
+        // Sub-label: absorbing driver
+        {
+          text: 'Low-load hours: wind/PV leave<br>lines underloaded and capacitive',
+          xref: 'paper', yref: 'paper',
+          x: 0.23, y: -0.08,
+          showarrow: false,
+          font: { size: 10, color: '#888888', family: '"DM Sans", sans-serif' },
+          xanchor: 'center',
+        },
+        // Sub-label: supporting driver
+        {
+          text: 'High-transit hours: offshore wind<br>overloads north–south AC lines',
+          xref: 'paper', yref: 'paper',
+          x: 0.77, y: -0.08,
+          showarrow: false,
+          font: { size: 10, color: '#888888', family: '"DM Sans", sans-serif' },
+          xanchor: 'center',
+        },
+        // "×4" callout on right panel for TenneT
+        {
+          x: 'TenneT',
+          y: 16000,
+          xref: 'x2', yref: 'y2',
+          text: '×5.6 vs 2030',
+          showarrow: false,
+          font: { size: 10, color: ORANGE_DARK, family: '"DM Sans", sans-serif' },
+          xanchor: 'center',
+          xshift: 12,
+        },
+      ],
+    };
+
+    Plotly.newPlot('chart', data, layout, {
+      responsive: true,
+      displayModeBar: false,
+    });
+
+    window.addEventListener('resize', () => Plotly.Plots.resize('chart'));
+  </script>
+</body>
+</html>

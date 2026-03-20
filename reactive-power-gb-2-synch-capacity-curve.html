@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GB synchronous capacity by region</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.35.0/plotly.min.js"></script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+html,body { width:100%; height:100%; overflow:hidden; font-family:'DM Sans',sans-serif; background:#fff; }
+.w { display:flex; flex-direction:column; width:100%; height:100%; padding:18px 22px 10px 22px; }
+h1 { font-size:17px; font-weight:400; line-height:1.25; margin-bottom:3px; }
+h1 b { font-weight:700; }
+.sub { font-size:11px; color:#555; margin-bottom:6px; }
+#chart { flex:1; min-height:0; }
+.footer { display:flex; justify-content:space-between; align-items:flex-end; padding-top:5px; }
+.src { font-size:9px; color:#aaa; flex:1; line-height:1.45; }
+.wm  { font-size:17px; font-weight:700; color:#333; letter-spacing:.25em; text-transform:uppercase; padding-left:14px; }
+</style>
+</head>
+<body>
+<div class="w">
+  <h1>GB synchronous generation: <b>38 GW in 2016, under 20 GW by 2030</b> — Scotland's fleet already gone</h1>
+  <div class="sub">CCGT + nuclear nameplate MW (DUKES 5.11, 2024) by region. DESNZ 34yr upside for 1yr-rolling plants. CM exit ≠ decommissioned — Peterhead, Great Yarmouth, South Humber Bank and Cottam DC remain BM-active.</div>
+  <div id="chart"></div>
+  <div class="footer">
+    <div class="src">Sources: DESNZ DUKES 5.11 (2024) — nameplate MW; ELEXON BM PN API (Jan 2026) — operational status; GB Capacity Market Register; DESNZ/Baringa "Assessing the deployment potential of flexible capacity in GB" (Feb 2024). At 2026: ~28.5 GW CCGT (Baringa: ~27 GW — our figure slightly higher as we include BM-active plants Baringa may have assumed retired). 34yr upside at 2035: ~18 GW CCGT (Baringa upside: ~17 GW). ★ = NESO LT2029 reactive power zone.</div>
+    <div class="wm">MODOENERGY</div>
+  </div>
+</div>
+<script>
+const F='"DM Sans",sans-serif';
+
+// Years 2016-2052
+const yrs=Array.from({length:37},(_,i)=>2016+i);
+
+// Plant data — corrected for BM-active plants
+// bm_only plants included in capacity (they're physically operating)
+// Retirement years: BM-only use DESNZ 34yr from commission; Peterhead special case ~2028
+const plantData=[
+  // Scotland
+  {r:'Scotland',mw:895, c:1976,ret:2022}, // Hunterston B nuclear
+  {r:'Scotland',mw:1200,c:1988,ret:2023}, // Torness nuclear
+  {r:'Scotland',mw:1180,c:1978,ret:2028}, // Peterhead — BM-active constraint plant, ~2028 estimate
+
+  // North East
+  {r:'North East',mw:1185,c:1983,ret:2027}, // Hartlepool nuclear
+
+  // North West ★
+  {r:'North West',mw:1060,c:1984,ret:2027}, // Heysham 1 nuclear
+  {r:'North West',mw:1240,c:1988,ret:2027}, // Heysham 2 nuclear
+  {r:'North West',mw:810, c:1994,ret:2028}, // Rocksavage
+  {r:'North West',mw:884, c:2016,ret:2041}, // Carrington 15yr
+  {r:'North West',mw:1380,c:2018,ret:2043}, // Connah's Quay 15yr
+
+  // Yorkshire
+  {r:'Yorkshire',mw:900, c:1994,ret:2015}, // Killingholme retired
+  {r:'Yorkshire',mw:1365,c:1999,ret:2033}, // South Humber Bank — BM-active, 34yr from 1999
+  {r:'Yorkshire',mw:735, c:1994,ret:2028}, // Keadby 1
+  {r:'Yorkshire',mw:1252,c:2004,ret:2038}, // VPI Immingham
+  {r:'Yorkshire',mw:1200,c:2000,ret:2034}, // Saltend
+  {r:'Yorkshire',mw:1332,c:2013,ret:2047}, // West Burton CCGT
+  {r:'Yorkshire',mw:840, c:2023,ret:2048}, // Keadby 2 15yr
+  {r:'Yorkshire',mw:776, c:2026,ret:2051}, // Eggborough 15yr
+
+  // East Midlands
+  {r:'East Midlands',mw:445, c:1999,ret:2033}, // Cottam DC — BM-active, 34yr from 1999
+  {r:'East Midlands',mw:819, c:1999,ret:2029}, // Sutton Bridge (30yr, no T-4)
+  {r:'East Midlands',mw:950, c:2004,ret:2038}, // Spalding
+  {r:'East Midlands',mw:1828,c:2010,ret:2044}, // Staythorpe
+
+  // London
+  {r:'London',mw:408,c:2004,ret:2038}, // Enfield
+
+  // South Central ★
+  {r:'South Central',mw:928, c:1983,ret:2021}, // Dungeness B nuclear — decommissioned
+  {r:'South Central',mw:420, c:1993,ret:2027}, // Great Yarmouth — BM-active, 34yr from 1993
+  {r:'South Central',mw:715, c:1993,ret:2027}, // Rye House
+  {r:'South Central',mw:420, c:1993,ret:2027}, // Shoreham
+  {r:'South Central',mw:735, c:1994,ret:2028}, // Little Barford
+  {r:'South Central',mw:755, c:1995,ret:2029}, // Medway
+  {r:'South Central',mw:1198,c:1995,ret:2029}, // Sizewell B nuclear
+  {r:'South Central',mw:1450,c:1997,ret:2031}, // Didcot B
+  {r:'South Central',mw:800, c:2002,ret:2036}, // Coryton
+  {r:'South Central',mw:805, c:2001,ret:2035}, // Damhead Creek
+  {r:'South Central',mw:1517,c:2011,ret:2045}, // Grain
+  {r:'South Central',mw:898, c:2009,ret:2043}, // Marchwood
+  {r:'South Central',mw:395, c:2000,ret:2035}, // Kings Lynn A 15yr
+
+  // South Wales & West ★
+  {r:'South Wales & West',mw:965, c:1976,ret:2022}, // Hinkley Point B nuclear
+  {r:'South Wales & West',mw:520, c:2003,ret:2019}, // Baglan Bay
+  {r:'South Wales & West',mw:375, c:1998,ret:2019}, // Barry
+  {r:'South Wales & West',mw:1234,c:2000,ret:2034}, // Seabank
+  {r:'South Wales & West',mw:905, c:2010,ret:2044}, // Langage
+  {r:'South Wales & West',mw:850, c:2010,ret:2044}, // Severn Power
+  {r:'South Wales & West',mw:2199,c:2012,ret:2046}, // Pembroke
+];
+
+const REGIONS=[
+  {name:'Scotland',                col:'#4E6D8C'},
+  {name:'North East',              col:'#7A9BBD'},
+  {name:'North West ★  350 MVAr',  col:'#1A8F5A', r:'North West'},
+  {name:'Yorkshire',               col:'#7B55A0'},
+  {name:'East Midlands',           col:'#999999'},
+  {name:'London',                  col:'#C8860A'},
+  {name:'South Central ★  620 MVAr',col:'#C83218',r:'South Central'},
+  {name:'South Wales & West ★  480 MVAr',col:'#2C6FB5',r:'South Wales & West'},
+];
+
+const traces=[...REGIONS].reverse().map(reg=>{
+  const rKey=reg.r||reg.name;
+  const mwByYear=yrs.map(yr=>
+    plantData.filter(p=>p.r===rKey&&p.c<=yr&&p.ret>=yr)
+             .reduce((s,p)=>s+p.mw,0)/1000
+  );
+  return{
+    name:reg.name,x:yrs,y:mwByYear.map(v=>+v.toFixed(2)),
+    type:'scatter',mode:'none',fill:'tonexty',
+    fillcolor:reg.col+'C8',line:{color:reg.col,width:0},
+    stackgroup:'one',
+    hovertemplate:`<b>${reg.name}</b><br>%{x}: %{y:.1f} GW<extra></extra>`,
+  };
+});
+
+// Baringa reference (CCGT only)
+traces.push({
+  name:'DESNZ/Baringa baseline — CCGT only (Feb 2024)',
+  x:[2026,2030,2035],y:[27,19,12],
+  type:'scatter',mode:'lines+markers',
+  line:{color:'#333',width:1.5,dash:'dot'},marker:{size:6,color:'#333'},
+  hovertemplate:'<b>DESNZ CCGT baseline</b><br>%{x}: %{y:.0f} GW<extra></extra>',
+});
+
+Plotly.newPlot('chart',traces,{
+  font:{family:F,size:11.5,color:'#4a4a4a'},
+  paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',
+  margin:{t:10,r:20,b:48,l:55,pad:0},
+  xaxis:{showgrid:false,tickfont:{size:11},tickcolor:'rgba(0,0,0,0)',range:[2016,2052],dtick:4},
+  yaxis:{title:{text:'GW',font:{size:11}},showgrid:true,gridcolor:'#EEEEEE',zeroline:false,tickfont:{size:11},range:[0,42]},
+  legend:{orientation:'h',yanchor:'bottom',y:1.01,xanchor:'left',x:0,font:{size:10},traceorder:'reversed',itemsizing:'constant'},
+  hovermode:'x unified',
+  hoverlabel:{bgcolor:'#222',font:{family:F,size:11.5,color:'#fff'},bordercolor:'#222'},
+  shapes:[
+    {type:'line',xref:'x',yref:'paper',x0:2026,x1:2026,y0:0,y1:1,line:{color:'#333',width:2}},
+  ],
+  annotations:[
+    {x:2026,y:41,xref:'x',yref:'y',text:'Now',showarrow:false,
+     font:{size:10,color:'#555',family:F},xanchor:'center',bgcolor:'rgba(255,255,255,0.9)',borderpad:2},
+    {x:2020.5,y:38.5,xref:'x',yref:'y',
+     text:'Scotland: 3.3 GW exited<br>2022–2024 (confirmed)',
+     showarrow:true,arrowhead:2,arrowsize:0.8,arrowcolor:'#4E6D8C',ax:50,ay:-22,
+     font:{size:10,color:'#4E6D8C',family:F},bgcolor:'rgba(255,255,255,0.93)',borderpad:4,bordercolor:'#ddd',borderwidth:1},
+    {x:2027,y:6,xref:'x',yref:'y',
+     text:'Peterhead, S.Humber Bank, Great<br>Yarmouth + Cottam DC: CM-exited<br>but still BM-active in Jan 2026',
+     showarrow:true,arrowhead:2,arrowsize:0.8,arrowcolor:'#E8872A',ax:-55,ay:30,
+     font:{size:9.5,color:'#C86820',family:F},bgcolor:'rgba(255,255,255,0.93)',borderpad:4,bordercolor:'#f5d5b0',borderwidth:1},
+  ],
+},{responsive:true,displayModeBar:false});
+window.addEventListener('resize',()=>Plotly.Plots.resize('chart'));
+</script>
+</body>
+</html>

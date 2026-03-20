@@ -1,0 +1,60 @@
+REACTIVE POWER ARTICLE — CHART INVENTORY
+=========================================
+All files: push to https://github.com/ovais-modo/modo-charts/tree/main/charts/
+Live URLs: https://ovais-modo.github.io/modo-charts/charts/{filename}
+
+PUSH THESE 5 FILES (new this session):
+───────────────────────────────────────────────────────────────
+
+1. reactive-power-gb-1-ccgt-retirement-timeline.html
+   Title: GB CCGT + nuclear: commission to projected retirement
+   Section: GB — "Where synchronous plant retires"
+   GitHub URL: https://ovais-modo.github.io/modo-charts/charts/reactive-power-gb-1-ccgt-retirement-timeline.html
+   Iframe height: 620px
+
+2. reactive-power-gb-2-synch-capacity-curve.html
+   Title: GB synchronous generation: 38 GW in 2016, under 20 GW by 2030
+   Section: GB — "Where synchronous plant retires"
+   GitHub URL: https://ovais-modo.github.io/modo-charts/charts/reactive-power-gb-2-synch-capacity-curve.html
+   Iframe height: 500px
+
+3. reactive-power-gb-3-sync-vs-inverter.html
+   Title: Synchronous generation is falling across all three markets
+   Section: "Why voltage management is getting harder"
+   GitHub URL: https://ovais-modo.github.io/modo-charts/charts/reactive-power-gb-3-sync-vs-inverter.html
+   Iframe height: 480px
+
+4. reactive-power-gb-4-voltage2026-submissions.html
+   Title: Standard BESS passed every assessment stage in Voltage 2026
+   Section: GB — after Voltage 2026 results table
+   GitHub URL: https://ovais-modo.github.io/modo-charts/charts/reactive-power-gb-4-voltage2026-submissions.html
+   Iframe height: 420px
+
+5. reactive-power-gb-5-gas-vs-bess-pipeline.html
+   Title: South Wales has the widest gap between retiring gas and BESS pipeline
+   Section: GB — end of "Where synchronous plant retires"
+   GitHub URL: https://ovais-modo.github.io/modo-charts/charts/reactive-power-gb-5-gas-vs-bess-pipeline.html
+   Iframe height: 460px
+
+6. reactive-power-germany-2-tso-deficit.html
+   Title: Voltage-supporting reactive deficit grows fourfold by 2037
+   Section: Germany
+   GitHub URL: https://ovais-modo.github.io/modo-charts/charts/reactive-power-germany-2-tso-deficit.html
+   Iframe height: 500px
+
+ALREADY LIVE ON FLOURISH:
+───────────────────────────────────────────────────────────────
+
+Spain — REE CCGT voltage dispatch H1 2025:
+  https://public.flourish.studio/visualisation/26091021/
+
+Spain — nuclear retirement + BESS scaling:
+  https://public.flourish.studio/visualisation/26091553/
+
+NOT NEEDED (dropped):
+───────────────────────────────────────────────────────────────
+reactive-power-germany-1-generation-mix.html  — coal/gas chart, Zach cut this
+
+IFRAME EMBED CODE (standard):
+───────────────────────────────────────────────────────────────
+<iframe src="[URL]" width="100%" height="[HEIGHT]px" frameborder="0" loading="lazy" style="border:none;"></iframe>

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Voltage 2026 submissions by technology</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.35.0/plotly.min.js"></script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+html,body { width:100%; height:100%; overflow:hidden; font-family:'DM Sans',sans-serif; background:#fff; }
+.w { display:flex; flex-direction:column; width:100%; height:100%; padding:24px 24px 16px 24px; }
+h1 { font-size:21px; font-weight:400; line-height:1.3; color:#333; margin:0; }
+h1 b { font-weight:700; }
+.sub { font-size:14px; color:#4a4a4a; margin-top:6px; line-height:1.3; }
+#chart { flex:1; min-height:0; width:100%; }
+.footer { display:flex; justify-content:space-between; align-items:flex-end; padding-top:10px; gap:16px; }
+.footer-left { display:flex; flex-direction:column; gap:2px; flex:1; }
+.src { font-size:11px; color:#aaa; line-height:1.4; }
+.note { font-size:11px; color:#aaa; line-height:1.4; }
+.wm { font-size:22px; font-weight:700; color:#333; letter-spacing:.25em; white-space:nowrap; flex-shrink:0; text-transform:uppercase; }
+</style>
+</head>
+<body>
+<div class="w">
+  <div class="chart-header">
+    <h1>Standard BESS passed <b>every assessment stage</b> in Voltage 2026 — novel configurations failed at Stage 1</h1>
+    <div class="sub">Voltage 2026 submissions by technology type and assessment outcome (number of options)</div>
+  </div>
+  <div id="chart"></div>
+  <div class="footer">
+    <div class="footer-left">
+      <div class="src">Source: NESO Voltage 2026 Tender Results</div>
+      <div class="note">Note: 41 options submitted across 10 companies and 6 technology types. Conrad Energy submitted 6 shunt reactor options — all technically compliant, none selected. Selection gap was economic, not technical.</div>
+    </div>
+    <div class="wm">MODOENERGY</div>
+  </div>
+</div>
+<script>
+const F = '"DM Sans", sans-serif';
+
+// Technology types (y-axis, horizontal bar)
+const techs = [
+  'BESS (grid-forming)',
+  'PV + BESS hybrid',
+  'Variable shunt reactor',
+  'Shunt reactor',
+  'Reactor',
+  'Standard BESS',
+];
+
+// Outcome counts per technology [selected, passed_not_selected, failed_stage1]
+const selected        = [0, 0, 0, 0, 1, 3];
+const passedNotSel    = [0, 0, 3, 6, 4, 12];
+const failedStage1    = [2, 3, 7, 0, 0, 0];
+
+const annotations = [];
+
+// Add total count labels
+techs.forEach((t, i) => {
+  const total = selected[i] + passedNotSel[i] + failedStage1[i];
+  annotations.push({
+    x: total + 0.3, y: i,
+    xref: 'x', yref: 'y',
+    text: `${total}`,
+    showarrow: false,
+    font: { size: 11, color: '#888', family: F },
+    xanchor: 'left',
+    yanchor: 'middle',
+  });
+});
+
+const data = [
+  {
+    y: techs, x: failedStage1,
+    name: 'Failed Stage 1 Technical Assessment',
+    type: 'bar', orientation: 'h',
+    marker: { color: '#d1d5db' },
+    hovertemplate: '%{x} option(s)<extra>Failed Stage 1</extra>',
+  },
+  {
+    y: techs, x: passedNotSel,
+    name: 'Passed all stages — not selected',
+    type: 'bar', orientation: 'h',
+    marker: { color: '#81b1fe' },
+    hovertemplate: '%{x} option(s)<extra>Passed, not selected</extra>',
+  },
+  {
+    y: techs, x: selected,
+    name: 'Selected',
+    type: 'bar', orientation: 'h',
+    marker: { color: '#467ee4' },
+    hovertemplate: '%{x} option(s)<extra>Selected</extra>',
+  },
+];
+
+const layout = {
+  font: { family: F, color: '#4a4a4a', size: 12 },
+  paper_bgcolor: 'rgba(0,0,0,0)',
+  plot_bgcolor: 'rgba(0,0,0,0)',
+  margin: { t: 10, r: 60, b: 40, l: 0, pad: 0 },
+  barmode: 'stack',
+  bargap: 0.35,
+  title: null,
+  xaxis: {
+    showgrid: true, gridcolor: '#E8E8E8', showline: false,
+    tickfont: { size: 11, color: '#4a4a4a', family: F },
+    tickcolor: 'rgba(0,0,0,0)',
+    zeroline: false, automargin: true,
+    dtick: 3, range: [0, 18],
+    title: { text: 'Number of options submitted', font: { size: 11, color: '#4a4a4a' }, standoff: 8 },
+  },
+  yaxis: {
+    showgrid: false, showline: false,
+    tickfont: { size: 12, color: '#4a4a4a', family: F },
+    tickcolor: 'rgba(0,0,0,0)',
+    automargin: true,
+  },
+  legend: {
+    orientation: 'h', yanchor: 'bottom', y: 1.02, xanchor: 'left', x: 0,
+    font: { size: 11, color: '#4a4a4a', family: F },
+    bgcolor: 'rgba(255,255,255,0)', borderwidth: 0,
+    traceorder: 'reversed',
+  },
+  hovermode: 'closest',
+  hoverlabel: { bgcolor: '#333', font: { family: F, size: 12, color: '#fff' }, bordercolor: '#333' },
+  annotations,
+};
+
+Plotly.newPlot('chart', data, layout, { responsive: true, displayModeBar: false });
+window.addEventListener('resize', () => Plotly.Plots.resize('chart'));
+</script>
+</body>
+</html>

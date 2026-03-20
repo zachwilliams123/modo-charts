@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GB synchronous generation retirement</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+html,body { width:100%; height:100%; overflow:hidden; font-family:'DM Sans',sans-serif; background:#fff; color:#333; }
+.w { display:flex; flex-direction:column; width:100%; height:100%; padding:16px 20px 10px 20px; }
+h1 { font-size:17px; font-weight:400; line-height:1.25; margin-bottom:2px; }
+h1 b { font-weight:700; }
+.sub { font-size:11px; color:#555; margin-bottom:5px; }
+.controls { display:flex; gap:7px; align-items:center; margin-bottom:6px; flex-wrap:wrap; }
+.ctrl-label { font-size:10.5px; color:#888; }
+.filter-btn { font-size:10px; font-family:'DM Sans',sans-serif; padding:3px 10px; border-radius:20px; border:1.5px solid #ddd; background:#fff; color:#666; cursor:pointer; transition:all 0.15s; }
+.filter-btn.active { font-weight:600; background:#f5f5f5; border-color:#999; }
+#ca { flex:1; min-height:0; }
+.footer { display:flex; justify-content:space-between; align-items:flex-end; padding-top:4px; }
+.src { font-size:9px; color:#aaa; flex:1; line-height:1.45; }
+.wm  { font-size:17px; font-weight:700; color:#333; letter-spacing:.25em; text-transform:uppercase; padding-left:14px; }
+</style>
+</head>
+<body>
+<div class="w">
+  <h1>GB CCGT + nuclear: commission to projected retirement — <b>CM exit ≠ decommissioned</b></h1>
+  <div class="sub">Nameplate MW (DUKES 5.11, 2024). Status verified against three sources: DUKES (physical existence), ELEXON BM PN data (operational), CMR (investment signal). Height ∝ MW.</div>
+  <div class="controls">
+    <span class="ctrl-label">Filter:</span>
+    <button class="filter-btn active" data-z="all">All</button>
+    <button class="filter-btn" data-z="South Central" style="color:#C83218">South Central ★</button>
+    <button class="filter-btn" data-z="South Wales & West" style="color:#2C6FB5">S. Wales & West ★</button>
+    <button class="filter-btn" data-z="North West" style="color:#1A8F5A">North West ★</button>
+    <button class="filter-btn" data-z="Yorkshire" style="color:#7B55A0">Yorkshire</button>
+    <button class="filter-btn" data-z="East Midlands" style="color:#888">East Midlands</button>
+    <button class="filter-btn" data-z="Scotland" style="color:#4E6D8C">Scotland</button>
+  </div>
+  <div id="ca"></div>
+  <div class="footer">
+    <div class="src">Sources: DESNZ DUKES 5.11 (2024) — nameplate MW and physical closure confirmation; ELEXON BM PN API (Jan 2026) — operational status; GB Capacity Market Register — contract status; DESNZ/Baringa "Assessing the deployment potential of flexible capacity in GB" (Feb 2024) — retirement assumption (34yr upside for 1yr-rolling; 30yr where no T-4 secured). ★ = NESO LT2029 reactive power zone. Key finding: Peterhead, Great Yarmouth, South Humber Bank and Cottam DC exited the CM but remain physically operational in the BM — CM exit ≠ decommissioning. Killingholme classified retired (no BM data; DUKES lists remaining GT units only). Severn Power Calon mothball (2018) treated as same physical plant as active Severn Power Ltd (850 MW, recommissioned under new operator).</div>
+    <div class="wm">MODOENERGY</div>
+  </div>
+</div>
+<script>
+// status: retired | bm_only | confirmed | at_risk | secured
+// retired  = DUKES absent AND no BM data — genuinely decommissioned
+// bm_only  = CM-exited but still in DUKES + active BM — orange, new category
+// confirmed= nuclear, confirmed final CM contract date
+// at_risk  = 1yr rolling, DESNZ 34yr upside
+// secured  = 15yr CM contract
+
+const plants=[
+  // ── RETIRED — DUKES absent, no BM data ──────────────────────────────
+  {n:'Killingholme',        r:'Yorkshire',          mw:900, c:1994,ret:2015,s:'retired'},
+  {n:'Baglan Bay',          r:'South Wales & West', mw:520, c:2003,ret:2019,s:'retired'},
+  {n:'Barry',               r:'South Wales & West', mw:375, c:1998,ret:2019,s:'retired'},
+  {n:'Hinkley Point B ☢',   r:'South Wales & West', mw:965, c:1976,ret:2022,s:'retired'},
+  {n:'Hunterston B ☢',      r:'Scotland',           mw:895, c:1976,ret:2022,s:'retired'},
+  {n:'Torness ☢',           r:'Scotland',           mw:1200,c:1988,ret:2023,s:'retired'},
+  {n:'Dungeness B ☢',       r:'South Central',      mw:928, c:1983,ret:2021,s:'retired'},
+
+  // ── BM-ACTIVE, NO CM — DUKES present + BM active, CM-exited ─────────
+  // These are NOT decommissioned. CM exit ≠ decommissioning.
+  {n:'Peterhead †',         r:'Scotland',           mw:1180,c:1978,ret:2028,s:'bm_only'},  // constraint plant, ~2yr remaining
+  {n:'Great Yarmouth',      r:'South Central',      mw:420, c:1993,ret:2027,s:'bm_only'},  // 34yr from 1993
+  {n:'South Humber Bank',   r:'Yorkshire',          mw:1365,c:1999,ret:2033,s:'bm_only'},  // 34yr from 1999
+  {n:'Cottam DC',           r:'East Midlands',      mw:445, c:1999,ret:2033,s:'bm_only'},  // 34yr from 1999
+
+  // ── CONFIRMED EXIT — nuclear ─────────────────────────────────────────
+  {n:'Hartlepool ☢',        r:'North East',         mw:1185,c:1983,ret:2027,s:'confirmed'},
+  {n:'Heysham 1 ☢',         r:'North West',         mw:1060,c:1984,ret:2027,s:'confirmed'},
+  {n:'Heysham 2 ☢',         r:'North West',         mw:1240,c:1988,ret:2027,s:'confirmed'},
+  {n:'Sizewell B ☢',        r:'South Central',      mw:1198,c:1995,ret:2029,s:'confirmed'},
+
+  // ── 1YR ROLLING — DESNZ 34yr upside ─────────────────────────────────
+  {n:'Rocksavage',          r:'North West',         mw:810, c:1994,ret:2028,s:'at_risk'},
+  {n:'Keadby 1',            r:'Yorkshire',          mw:735, c:1994,ret:2028,s:'at_risk'},
+  {n:'Rye House',           r:'South Central',      mw:715, c:1993,ret:2027,s:'at_risk'},
+  {n:'Shoreham',            r:'South Central',      mw:420, c:1993,ret:2027,s:'at_risk'},
+  {n:'Little Barford',      r:'South Central',      mw:735, c:1994,ret:2028,s:'at_risk'},
+  {n:'Medway',              r:'South Central',      mw:755, c:1995,ret:2029,s:'at_risk'},
+  {n:'Sizewell B',          r:'South Central',      mw:0,   c:1995,ret:2029,s:'at_risk'},   // nuclear above covers this
+  {n:'Didcot B',            r:'South Central',      mw:1450,c:1997,ret:2031,s:'at_risk'},
+  {n:'Sutton Bridge ‡',     r:'East Midlands',      mw:819, c:1999,ret:2029,s:'at_risk'},  // no T-4: 30yr
+  {n:'Coryton',             r:'South Central',      mw:800, c:2002,ret:2036,s:'at_risk'},
+  {n:'Damhead Creek',       r:'South Central',      mw:805, c:2001,ret:2035,s:'at_risk'},
+  {n:'Grain',               r:'South Central',      mw:1517,c:2011,ret:2045,s:'at_risk'},
+  {n:'Marchwood',           r:'South Central',      mw:898, c:2009,ret:2043,s:'at_risk'},
+  {n:'Enfield',             r:'London',             mw:408, c:2004,ret:2038,s:'at_risk'},
+  {n:'Spalding',            r:'East Midlands',      mw:950, c:2004,ret:2038,s:'at_risk'},
+  {n:'Staythorpe',          r:'East Midlands',      mw:1828,c:2010,ret:2044,s:'at_risk'},
+  {n:'VPI Immingham',       r:'Yorkshire',          mw:1252,c:2004,ret:2038,s:'at_risk'},
+  {n:'Saltend',             r:'Yorkshire',          mw:1200,c:2000,ret:2034,s:'at_risk'},
+  {n:'West Burton CCGT',    r:'Yorkshire',          mw:1332,c:2013,ret:2047,s:'at_risk'},
+  {n:'Seabank',             r:'South Wales & West', mw:1234,c:2000,ret:2034,s:'at_risk'},
+  {n:'Langage',             r:'South Wales & West', mw:905, c:2010,ret:2044,s:'at_risk'},
+  {n:'Severn Power',        r:'South Wales & West', mw:850, c:2010,ret:2044,s:'at_risk'},
+  {n:'Pembroke',            r:'South Wales & West', mw:2199,c:2012,ret:2046,s:'at_risk'},
+
+  // ── 15YR CONTRACT ────────────────────────────────────────────────────
+  {n:'Carrington',          r:'North West',         mw:884, c:2016,ret:2041,s:'secured'},
+  {n:"Connah's Quay",       r:'North West',         mw:1380,c:2018,ret:2043,s:'secured'},
+  {n:'Kings Lynn A',        r:'South Central',      mw:395, c:2000,ret:2035,s:'secured'},
+  {n:'Keadby 2',            r:'Yorkshire',          mw:840, c:2023,ret:2048,s:'secured'},
+  {n:'Eggborough',          r:'Yorkshire',          mw:776, c:2026,ret:2051,s:'secured'},
+].filter(p=>p.mw>0);
+
+const ZC={
+  'Scotland':'#4E6D8C','North East':'#7A9BBD','North West':'#1A8F5A',
+  'Yorkshire':'#7B55A0','East Midlands':'#999','London':'#C8860A',
+  'South Central':'#C83218','South Wales & West':'#2C6FB5'
+};
+const SC={retired:'#BBBBBB',bm_only:'#E8872A',confirmed:'#E8B84B',at_risk:'#D44020',secured:'#27ac60'};
+const SO={retired:0.45,bm_only:0.85,confirmed:0.82,at_risk:0.88,secured:0.85};
+
+const NOW=2026,X0=1975,X1=2055;
+const maxMW=Math.max(...plants.map(p=>p.mw));
+const bh=mw=>5+(mw/maxMW)*22;
+const GAP=2;
+const ns='http://www.w3.org/2000/svg';
+const el=(t,a,p)=>{const e=document.createElementNS(ns,t);Object.entries(a).forEach(([k,v])=>e.setAttribute(k,v));p&&p.appendChild(e);return e;};
+const tx=(s,x,y,a,p)=>{const e=el('text',{x,y,...a},p);e.textContent=s;return e;};
+
+const tt=document.createElement('div');
+Object.assign(tt.style,{position:'fixed',background:'#222',color:'#fff',padding:'7px 11px',borderRadius:'4px',fontSize:'11px',pointerEvents:'none',opacity:'0',transition:'opacity .1s',zIndex:'100',maxWidth:'300px',lineHeight:'1.6',fontFamily:'"DM Sans",sans-serif'});
+document.body.appendChild(tt);
+
+let fz='all';
+document.querySelectorAll('.filter-btn').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.filter-btn').forEach(x=>{x.classList.remove('active');x.style.background='#fff';x.style.borderColor='#ddd';});
+  b.classList.add('active');b.style.background='#f5f5f5';b.style.borderColor='#999';
+  fz=b.dataset.z;draw();
+}));
+
+function hoverText(p){
+  const base=`<b>${p.n}</b><br>${p.mw.toLocaleString()} MW (DUKES nameplate)<br>Commissioned: ${p.c} · Projected exit: <b>${p.ret}</b> (${p.ret-p.c}yr)`;
+  const detail={
+    retired:'Decommissioned — absent from DUKES 2024 + no ELEXON BM data',
+    bm_only:'<span style="color:#E8872A">CM-exited but physically operational</span><br>Present in DUKES 2024. Active in ELEXON BM Jan 2026.<br>No CM contract = no long-term investment signal.',
+    confirmed:'Confirmed final CM contract — nuclear exit date certain',
+    at_risk:p.n.includes('Sutton')?'30yr — no T-4 secured March 2026 (DESNZ downside)':'34yr DESNZ upside assumption — 1yr rolling, no investment signal',
+    secured:'15yr CM contract — investment committed, runs to contract end',
+  }[p.s]||'';
+  return `${base}<br>${detail}`;
+}
+
+function draw(){
+  const ca=document.getElementById('ca');
+  const W=ca.clientWidth,H=ca.clientHeight;
+  const LABEL=150,CW=W-LABEL-6;
+  const xp=yr=>LABEL+(yr-X0)/(X1-X0)*CW;
+  const AY=H-18;
+
+  const visible=plants.filter(p=>fz==='all'||p.r===fz);
+  const sorted=[...visible].sort((a,b)=>{
+    const g={retired:0,bm_only:1,confirmed:2,at_risk:3,secured:4};
+    if(g[a.s]!==g[b.s]) return g[a.s]-g[b.s];
+    return a.c-b.c;
+  });
+
+  const svg=el('svg',{width:W,height:H});
+  el('rect',{x:0,y:0,width:W,height:H,fill:'#fff'},svg);
+
+  for(let yr=X0;yr<=X1;yr+=5){
+    const x=xp(yr);
+    el('line',{x1:x,y1:22,x2:x,y2:AY,stroke:yr%10===0?'#ebebeb':'#f4f4f4','stroke-width':yr%10===0?1:0.5},svg);
+    if(yr%10===0&&yr>X0&&yr<X1)
+      tx(yr,x,AY+12,{fill:'#ccc','font-size':'9','font-family':'"DM Sans",sans-serif','text-anchor':'middle'},svg);
+  }
+
+  el('line',{x1:xp(NOW),y1:22,x2:xp(NOW),y2:AY,stroke:'#333','stroke-width':2},svg);
+  tx('2026',xp(NOW),20,{fill:'#333','font-size':'9','font-family':'"DM Sans",sans-serif','text-anchor':'middle','font-weight':'600'},svg);
+
+  let y=26,lg=null;
+  sorted.forEach(p=>{
+    const grp=p.s==='retired'?'r':p.s==='bm_only'?'b':p.s==='confirmed'?'c':'a';
+    if(lg&&grp!==lg){
+      el('line',{x1:LABEL-4,y1:y+1,x2:W-6,y2:y+1,stroke:'#e8e8e8','stroke-width':1},svg);
+      y+=7;
+    }
+    lg=grp;
+
+    const h=bh(p.mw),x0=xp(p.c),x1=xp(p.ret);
+    el('rect',{x:x0,y,width:Math.max(x1-x0,2),height:h,fill:SC[p.s],opacity:SO[p.s]},svg);
+    el('rect',{x:LABEL-3.5,y,width:2.5,height:h,fill:ZC[p.r]||'#999',opacity:p.s==='retired'?0.4:1},svg);
+
+    if(x1-x0>42)
+      tx(`${p.mw.toLocaleString()} MW`,x0+4,y+h/2+3.5,{fill:'rgba(255,255,255,.9)','font-size':'7','font-family':'"DM Sans",sans-serif','font-weight':'600'},svg);
+
+    const nc=p.s==='retired'?'#bbb':p.s==='bm_only'?'#C86820':p.s==='confirmed'?'#a07820':p.s==='secured'?'#27ac60':'#444';
+    const nb=(p.s==='at_risk'&&(NOW-p.c)>=25)||p.s==='bm_only'?'600':'400';
+    tx(p.n,LABEL-6,y+h/2+3.5,{fill:nc,'font-size':'9','font-family':'"DM Sans",sans-serif','text-anchor':'end','font-weight':nb},svg);
+    tx(`${p.ret-p.c}yr`,xp(p.ret)+3,y+h/2+3.5,{fill:'#bbb','font-size':'7.5','font-family':'"DM Sans",sans-serif'},svg);
+
+    const hr=el('rect',{x:LABEL,y,width:CW,height:h,fill:'transparent',cursor:'default'},svg);
+    hr.addEventListener('mousemove',ev=>{
+      tt.innerHTML=hoverText(p);
+      tt.style.opacity='1';
+      tt.style.left=Math.min(ev.clientX+14,innerWidth-310)+'px';
+      tt.style.top=Math.max(ev.clientY-80,8)+'px';
+    });
+    hr.addEventListener('mouseleave',()=>{tt.style.opacity='0';});
+    y+=h+GAP;
+  });
+
+  // Legend
+  const ly=AY+4; let lx=LABEL;
+  [
+    {c:SC.retired,  o:.45, l:'Decommissioned'},
+    {c:SC.bm_only,  o:.85, l:'CM-exited, BM-active (not decommissioned)'},
+    {c:SC.confirmed,o:.82, l:'Nuclear — confirmed exit'},
+    {c:SC.at_risk,  o:.88, l:'1yr rolling — no investment signal'},
+    {c:SC.secured,  o:.85, l:'15yr contract'},
+  ].forEach(it=>{
+    el('rect',{x:lx,y:ly,width:10,height:10,fill:it.c,opacity:it.o,rx:'2'},svg);
+    tx(it.l,lx+14,ly+9.5,{fill:'#666','font-size':'8.5','font-family':'"DM Sans",sans-serif'},svg);
+    lx+=it.l.length*5+20;
+    if(lx>W-60){lx=LABEL;}
+  });
+
+  ca.innerHTML='';ca.appendChild(svg);
+}
+
+draw();
+window.addEventListener('resize',draw);
+</script>
+</body>
+</html>

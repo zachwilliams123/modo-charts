@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Synchronous vs inverter-based generation mix</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.35.0/plotly.min.js"></script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+html,body { width:100%; height:100%; overflow:hidden; font-family:'DM Sans',sans-serif; background:#fff; }
+.w { display:flex; flex-direction:column; width:100%; height:100%; padding:24px 24px 16px 24px; }
+.chart-header { margin-bottom:2px; }
+h1 { font-size:21px; font-weight:400; line-height:1.3; color:#333; margin:0; }
+h1 b { font-weight:700; }
+.sub { font-size:14px; color:#4a4a4a; margin-top:6px; line-height:1.3; }
+#chart { flex:1; min-height:0; width:100%; }
+.footer { display:flex; justify-content:space-between; align-items:flex-end; padding-top:10px; gap:16px; }
+.footer-left { display:flex; flex-direction:column; gap:2px; flex:1; }
+.src { font-size:11px; color:#aaa; line-height:1.4; }
+.note { font-size:11px; color:#aaa; line-height:1.4; }
+.wm { font-size:22px; font-weight:700; color:#333; letter-spacing:.25em; white-space:nowrap; flex-shrink:0; text-transform:uppercase; }
+</style>
+</head>
+<body>
+<div class="w">
+  <div class="chart-header">
+    <h1>Synchronous generation is <b>falling across all three markets</b> — inverter-based capacity grows</h1>
+    <div class="sub">Annual generation output by source type (TWh), 2026 / 2030 / 2035 snapshots</div>
+  </div>
+  <div id="chart"></div>
+  <div class="footer">
+    <div class="footer-left">
+      <div class="src">Source: Modo Energy modelling</div>
+      <div class="note">Note: Synchronous = CCGT, coal, lignite, nuclear, gas CHP, hydro. Inverter-based = onshore wind, offshore wind, solar PV, BESS.</div>
+    </div>
+    <div class="wm">MODOENERGY</div>
+  </div>
+</div>
+<script>
+const F = '"DM Sans", sans-serif';
+
+// Data: [GB_2026, GB_2030, GB_2035, DE_2026, DE_2030, DE_2035, ES_2026, ES_2030, ES_2035]
+// Synchronous TWh
+const syncData  = [162, 148, 130,  320, 290, 246,  150, 138, 105];
+// Inverter TWh
+const invData   = [133, 210, 340,  278, 395, 560,  126, 158, 218];
+
+const labels = [
+  'GB<br>2026','GB<br>2030','GB<br>2035',
+  ' ','','',  // spacers
+  'DE<br>2026','DE<br>2030','DE<br>2035',
+  '  ','','',
+  'ES<br>2026','ES<br>2030','ES<br>2035',
+];
+
+// Build data arrays with nulls for spacers
+const fullSync = [162,148,130, null,null,null, 320,290,246, null,null,null, 150,138,105];
+const fullInv  = [133,210,340, null,null,null, 278,395,560, null,null,null, 126,158,218];
+
+// Compute % sync for annotation
+function syncPct(s, i) { return Math.round(s/(s+i)*100); }
+
+const annotations = [];
+const xPositions = [0,1,2, 6,7,8, 12,13,14];
+xPositions.forEach((xIdx, i) => {
+  const s = fullSync[xIdx], iv = fullInv[xIdx];
+  if (s == null) return;
+  annotations.push({
+    x: xIdx, y: s + iv + 8,
+    xref: 'x', yref: 'y',
+    text: `${syncPct(s,iv)}%`,
+    showarrow: false,
+    font: { size: 10, color: '#467ee4', family: F },
+    xanchor: 'center',
+  });
+});
+
+// Panel labels
+['Great Britain','Germany','Spain'].forEach((name, i) => {
+  const xCenter = [1, 7, 13][i];
+  annotations.push({
+    x: xCenter, y: 1.08,
+    xref: 'x', yref: 'paper',
+    text: name,
+    showarrow: false,
+    font: { size: 14, color: '#333', family: F },
+    xanchor: 'center',
+  });
+});
+
+// Sync % label annotation
+annotations.push({
+  x: -0.5, y: 1.0,
+  xref: 'paper', yref: 'paper',
+  text: '% = synchronous share',
+  showarrow: false,
+  font: { size: 10, color: '#467ee4', family: F },
+  xanchor: 'left',
+});
+
+const data = [
+  {
+    x: Array.from({length:15},(_,i)=>i),
+    y: fullInv,
+    name: 'Inverter-based',
+    type: 'bar',
+    marker: { color: '#81b1fe' },
+    hovertemplate: '%{y:.0f} TWh<extra>Inverter-based</extra>',
+  },
+  {
+    x: Array.from({length:15},(_,i)=>i),
+    y: fullSync,
+    name: 'Synchronous',
+    type: 'bar',
+    marker: { color: '#467ee4' },
+    hovertemplate: '%{y:.0f} TWh<extra>Synchronous</extra>',
+  },
+];
+
+const layout = {
+  font: { family: F, color: '#4a4a4a', size: 12 },
+  paper_bgcolor: 'rgba(0,0,0,0)',
+  plot_bgcolor: 'rgba(0,0,0,0)',
+  margin: { t: 30, r: 20, b: 50, l: 0, pad: 0 },
+  barmode: 'stack',
+  bargap: 0.15,
+  title: null,
+  xaxis: {
+    showgrid: false, showline: false,
+    tickvals: [0,1,2, 6,7,8, 12,13,14],
+    ticktext: ['2026','2030','2035', '2026','2030','2035', '2026','2030','2035'],
+    tickfont: { size: 11, color: '#4a4a4a', family: F },
+    tickcolor: 'rgba(0,0,0,0)',
+    automargin: true,
+    range: [-0.8, 14.8],
+  },
+  yaxis: {
+    showgrid: true, gridcolor: '#E8E8E8', showline: false,
+    tickfont: { size: 11, color: '#4a4a4a', family: F },
+    tickcolor: 'rgba(0,0,0,0)',
+    zeroline: false, automargin: true,
+    title: { text: 'TWh', font: { size: 11, color: '#4a4a4a' }, standoff: 8 },
+  },
+  legend: {
+    orientation: 'h', yanchor: 'bottom', y: 1.02, xanchor: 'left', x: 0,
+    font: { size: 12, color: '#4a4a4a', family: F },
+    bgcolor: 'rgba(255,255,255,0)', borderwidth: 0,
+    traceorder: 'reversed',
+  },
+  hovermode: 'closest',
+  hoverlabel: { bgcolor: '#333', font: { family: F, size: 12, color: '#fff' }, bordercolor: '#333' },
+  annotations,
+  shapes: [
+    { type:'line', x0:3.9, x1:3.9, y0:0, y1:1, xref:'x', yref:'paper', line:{ color:'#e8e8e8', width:1 } },
+    { type:'line', x0:9.9, x1:9.9, y0:0, y1:1, xref:'x', yref:'paper', line:{ color:'#e8e8e8', width:1 } },
+  ],
+};
+
+Plotly.newPlot('chart', data, layout, { responsive: true, displayModeBar: false });
+window.addEventListener('resize', () => Plotly.Plots.resize('chart'));
+</script>
+</body>
+</html>
